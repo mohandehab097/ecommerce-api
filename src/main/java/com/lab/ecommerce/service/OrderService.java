@@ -24,7 +24,14 @@ public class OrderService {
     }
 
     @Transactional
-    public Order checkout(Long customerId) {
+    public Order checkout(Long customerId, String idempotencyKey) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var existing = orderRepository.findByIdempotencyKey(idempotencyKey);
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         Cart cart = cartService.getCart(customerId);
 
         if (cart.getItems().isEmpty()) {
@@ -32,14 +39,18 @@ public class OrderService {
         }
 
         Order order = new Order(customerId);
+        order.setIdempotencyKey(idempotencyKey != null && !idempotencyKey.isBlank() ? idempotencyKey : null);
         BigDecimal total = BigDecimal.ZERO;
 
         for (CartItem item : cart.getItems()) {
+            int remaining = item.getProduct().getStockQty() - item.getQuantity();
+            if (remaining < 0) {
+                throw new IllegalStateException("Not enough stock for " + item.getProduct().getName());
+            }
+
             BigDecimal lineTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             total = total.add(lineTotal);
             order.getItems().add(new OrderItem(order, item.getProduct(), item.getQuantity(), item.getProduct().getPrice()));
-
-            int remaining = item.getProduct().getStockQty() - item.getQuantity();
             item.getProduct().setStockQty(remaining);
         }
 

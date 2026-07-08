@@ -24,6 +24,9 @@ public class Order {
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 

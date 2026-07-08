@@ -26,6 +26,9 @@ public class Product {
 
     private Integer stockQty;
 
+    @Version
+    private Long version;
+
     public Product(String name, String description, BigDecimal price, Integer stockQty) {
         this.name = name;
         this.description = description;
