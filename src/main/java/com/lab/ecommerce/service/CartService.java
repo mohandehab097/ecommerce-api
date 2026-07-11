@@ -39,7 +39,18 @@ public class CartService {
 
         findItem(cart, productId)
                 .ifPresentOrElse(
-                        existing -> existing.setQuantity(existing.getQuantity() + quantity),
+                        existing -> {
+                            int newQuantity;
+                            try {
+                                newQuantity = Math.addExact(existing.getQuantity(), quantity);
+                            } catch (ArithmeticException e) {
+                                throw new IllegalStateException("Not enough stock for " + product.getName());
+                            }
+                            if (product.getStockQty() < newQuantity) {
+                                throw new IllegalStateException("Not enough stock for " + product.getName());
+                            }
+                            existing.setQuantity(newQuantity);
+                        },
                         () -> cart.getItems().add(new CartItem(cart, product, quantity))
                 );
 
