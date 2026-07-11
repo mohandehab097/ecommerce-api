@@ -1,6 +1,7 @@
 package com.lab.ecommerce.service;
 
 import com.lab.ecommerce.model.Cart;
+import com.lab.ecommerce.model.CartItem;
 import com.lab.ecommerce.model.Product;
 import com.lab.ecommerce.repository.CartRepository;
 import com.lab.ecommerce.repository.ProductRepository;
@@ -56,5 +57,59 @@ class CartServiceTest {
         assertThatThrownBy(() -> cartService.addItem(42L, 1L, 5))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Not enough stock");
+    }
+
+    @Test
+    void updateItemQuantity_setsQuantityOnExistingItem() {
+        cartService = new CartService(cartRepository, productRepository);
+        Product product = new Product("Widget", "desc", BigDecimal.TEN, 10);
+        product.setId(1L);
+        Cart cart = new Cart(42L);
+        cart.getItems().add(new CartItem(cart, product, 2));
+
+        when(cartRepository.findByCustomerId(42L)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Cart result = cartService.updateItemQuantity(42L, 1L, 5);
+
+        assertThat(result.getItems().get(0).getQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void updateItemQuantity_rejectsWhenStockIsInsufficient() {
+        cartService = new CartService(cartRepository, productRepository);
+        Product product = new Product("Widget", "desc", BigDecimal.TEN, 3);
+        product.setId(1L);
+        Cart cart = new Cart(42L);
+        cart.getItems().add(new CartItem(cart, product, 2));
+
+        when(cartRepository.findByCustomerId(42L)).thenReturn(Optional.of(cart));
+
+        assertThatThrownBy(() -> cartService.updateItemQuantity(42L, 1L, 5))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Not enough stock");
+    }
+
+    @Test
+    void updateItemQuantity_throwsWhenItemNotInCart() {
+        cartService = new CartService(cartRepository, productRepository);
+        Cart cart = new Cart(42L);
+
+        when(cartRepository.findByCustomerId(42L)).thenReturn(Optional.of(cart));
+
+        assertThatThrownBy(() -> cartService.updateItemQuantity(42L, 1L, 1))
+                .isInstanceOf(java.util.NoSuchElementException.class)
+                .hasMessageContaining("Item not in cart");
+    }
+
+    @Test
+    void updateItemQuantity_throwsWhenCartNotFound() {
+        cartService = new CartService(cartRepository, productRepository);
+
+        when(cartRepository.findByCustomerId(42L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> cartService.updateItemQuantity(42L, 1L, 1))
+                .isInstanceOf(java.util.NoSuchElementException.class)
+                .hasMessageContaining("Cart not found");
     }
 }

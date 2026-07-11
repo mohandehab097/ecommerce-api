@@ -1,6 +1,7 @@
 package com.lab.ecommerce.controller;
 
 import com.lab.ecommerce.dto.AddCartItemRequest;
+import com.lab.ecommerce.dto.UpdateCartItemRequest;
 import com.lab.ecommerce.model.Cart;
 import com.lab.ecommerce.service.CartService;
 import jakarta.validation.Valid;
@@ -31,6 +32,12 @@ public class CartController {
     @PostMapping("/{customerId}/items")
     public Cart addItem(@PathVariable Long customerId, @Valid @RequestBody AddCartItemRequest request) {
         return cartService.addItem(customerId, request.getProductId(), request.getQuantity());
+    }
+
+    @PutMapping("/{customerId}/items/{productId}")
+    public Cart updateItemQuantity(@PathVariable Long customerId, @PathVariable Long productId,
+                                    @Valid @RequestBody UpdateCartItemRequest request) {
+        return cartService.updateItemQuantity(customerId, productId, request.getQuantity());
     }
 
     @DeleteMapping("/{customerId}/items/{productId}")
