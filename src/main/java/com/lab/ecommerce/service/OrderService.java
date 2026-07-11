@@ -28,7 +28,11 @@ public class OrderService {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             var existing = orderRepository.findByIdempotencyKey(idempotencyKey);
             if (existing.isPresent()) {
-                return existing.get();
+                Order existingOrder = existing.get();
+                if (!existingOrder.getCustomerId().equals(customerId)) {
+                    throw new SecurityException("Idempotency key does not belong to customer " + customerId);
+                }
+                return existingOrder;
             }
         }
 
