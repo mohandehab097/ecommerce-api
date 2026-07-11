@@ -18,8 +18,9 @@ public class OrderController {
     }
 
     @PostMapping("/checkout")
-    public Order checkout(@RequestParam Long customerId) {
-        return orderService.checkout(customerId);
+    public Order checkout(@RequestParam Long customerId,
+                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        return orderService.checkout(customerId, idempotencyKey);
     }
 
     @GetMapping("/{id}")
