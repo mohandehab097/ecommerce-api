@@ -1,12 +1,31 @@
 ---
 name: code-review
-description: Reviews Java/Spring Boot ecommerce backend code (CartService, OrderService, ProductService, and related controllers/repositories) for bugs (race conditions, null pointer risks, business logic errors, security/injection risks), naming/structure/code standards, and clean code practices. Asks before applying any fix, then offers a CodeRabbit CLI second-pass review. Use when the user asks to review, audit, or check code quality/style/bugs/security in the cart, checkout, order, or product modules. Does NOT commit/push/open a PR — for that, use the ship skill once review is clean.
+description: Reviews Java/Spring Boot ecommerce backend code (CartService, OrderService, ProductService, and related controllers/repositories) for bugs (race conditions, null pointer risks, business logic errors, security/injection risks), naming/structure/code standards, and clean code practices. Asks before applying any fix. Use when the user asks to review, audit, or check code quality/style/bugs/security in the cart, checkout, order, or product modules. Does NOT commit/push/open a PR — for that, use the ship skill once review is clean.
 ---
 
 # Code Review
 
 Review only. Never touches git (no branch switch, no commit, no push, no PR)
 — that's the **ship** skill's job, once this one is clean.
+
+## Part 0 — Scope: uncommitted changes only
+
+Never review the whole repo. Scope every review to the current uncommitted
+change set:
+
+1. `git status --short` — lists modified (staged + unstaged) and untracked
+   new files.
+2. `git diff HEAD` — the actual line-level changes to review (this is what
+   findings should anchor to, not the full file from scratch).
+3. Review set = every file `git status --short` lists, i.e. modified,
+   staged, and untracked-but-new files. Skip anything not in that list, even
+   if it sits right next to a changed file.
+4. For a **modified** file, focus findings on the changed lines and any
+   logic they touch (e.g. a changed line inside `checkout()` — check that
+   whole method, not unrelated methods in the same file untouched by the
+   diff). For a **new untracked** file, review it in full — there's no prior
+   version to diff against.
+5. If `git status --short` is empty, say so and stop — nothing to review.
 
 ## Part 1 — Review
 
@@ -233,8 +252,8 @@ Severity | Category | File/Method | Issue | Fix
 Order by severity (Critical > High > Medium > Low).
 
 If the checklist comes back fully clean (no findings at all), say so plainly
-and skip straight to the CodeRabbit offer in Part 3 — don't invent an ask-to-fix
-step with nothing to fix.
+and close with the ship handoff below — don't invent an ask-to-fix step with
+nothing to fix.
 
 ## Part 2 — Ask before fixing
 
@@ -247,11 +266,11 @@ directly, e.g.:
 Wait for an explicit answer before changing any code. Respect the scope they
 pick:
 - **All** — fix everything in the table.
-- **Critical/High only** — fix those, leave Medium/Low listed as-is (carry them
-  forward to Part 3/ship notes as still-open).
+- **Critical/High only** — fix those, leave Medium/Low listed as-is (carry
+  them forward to ship notes as still-open).
 - **Specific ones** — fix only what they point at.
-- **None right now** — skip fixing, go straight to Part 3 (a second CodeRabbit
-  pass on unfixed code is still useful, and is the user's call, not yours).
+- **None right now** — skip fixing, close out as-is (the user's call, not
+  yours).
 
 When fixing:
 - Fix the smallest correct change per finding — no drive-by refactors beyond
@@ -261,37 +280,7 @@ When fixing:
 - After all requested fixes are applied, report back what changed per finding
   (one line each) and what's still open (if anything was deliberately left).
 
-## Part 3 — CodeRabbit second pass (mandatory checkpoint, do not skip)
-
-**Hard gate: this question must be asked and answered before this skill ends
-— even if the user already said "ship it", "ok now push", or otherwise
-signaled they're done.** A "ship it" that arrives before this question has
-been asked is answering the *wrong* question — treat it as "yes, and once
-you're through this step, go ahead and ship" (see below), not as permission
-to skip straight to git. Never silently proceed past this part.
-
-Immediately after Part 2 concludes (fixes applied, or user chose not to
-fix), before anything else, ask:
-
-> "Want me to run `coderabbit review` for a second-pass AI review before you
-> ship this?"
-
-If yes:
-1. Run `coderabbit review --plain` (or `cr review --plain`) from the repo root
-   against the current changes.
-2. Present its findings plainly — don't filter or reinterpret them.
-3. If it surfaces new issues, loop back to Part 2's ask-before-fix pattern for
-   those findings specifically (same rules: ask scope, don't auto-fix).
-4. If it comes back clean, say so.
-
-If the user's reply to *anything* in Part 2 (or earlier) already included
-"ship it" / "push it" pre-emptively, don't treat that as skipping this
-question — ask it anyway, then proceed to ship once it's answered. The only
-way this step is skipped is an explicit "no" / "skip coderabbit" in direct
-response to the question above.
-
-Once resolved (declined, or ran clean, or its findings are resolved), close
-with:
+Once resolved (fixes applied, or user chose not to fix), close with:
 
 > "Review done. Say 'ship it' when ready to commit, push, and open a PR."
 
