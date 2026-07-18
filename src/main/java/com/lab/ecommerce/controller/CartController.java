@@ -44,4 +44,9 @@ public class CartController {
     public Cart removeItem(@PathVariable Long customerId, @PathVariable Long productId) {
         return cartService.removeItem(customerId, productId);
     }
+
+    @GetMapping("/{customerId}/items/{productId}/quantity")
+    public Integer getItemQuantity(@PathVariable Long customerId, @PathVariable Long productId) {
+        return cartService.getItemQuantity(customerId, productId);
+    }
 }

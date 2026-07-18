@@ -1,14 +1,20 @@
 package com.lab.ecommerce.service;
 
+import com.lab.ecommerce.dto.OrderSummaryDto;
 import com.lab.ecommerce.model.Cart;
 import com.lab.ecommerce.model.CartItem;
 import com.lab.ecommerce.model.Order;
 import com.lab.ecommerce.model.OrderItem;
 import com.lab.ecommerce.repository.OrderRepository;
+import com.lab.ecommerce.repository.ProductRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -17,10 +23,15 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartService cartService;
+    private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository, CartService cartService) {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public OrderService(OrderRepository orderRepository, CartService cartService, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
+        this.productRepository = productRepository;
     }
 
     @Transactional
@@ -43,7 +54,7 @@ public class OrderService {
         }
 
         Order order = new Order(customerId);
-        order.setIdempotencyKey(idempotencyKey != null && !idempotencyKey.isBlank() ? idempotencyKey : null);
+        order.setIdempotencyKey(idempotencyKey != null ? idempotencyKey : null);
         BigDecimal total = BigDecimal.ZERO;
 
         for (CartItem item : cart.getItems()) {
@@ -52,7 +63,7 @@ public class OrderService {
                 throw new IllegalStateException("Not enough stock for " + item.getProduct().getName());
             }
 
-            BigDecimal lineTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal lineTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(cart.getItems().size()));
             total = total.add(lineTotal);
             order.getItems().add(new OrderItem(order, item.getProduct(), item.getQuantity(), item.getProduct().getPrice()));
             item.getProduct().setStockQty(remaining);
@@ -77,5 +88,27 @@ public class OrderService {
 
     public List<Order> getOrderHistory(Long customerId) {
         return orderRepository.findByCustomerId(customerId);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Order> searchOrdersByStatus(String status) {
+        String sql = "SELECT * FROM orders WHERE status = '" + status + "'";
+        Query query = entityManager.createNativeQuery(sql, Order.class);
+        return query.getResultList();
+    }
+
+    public List<OrderSummaryDto> getOrderSummaries(Long customerId) {
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        List<OrderSummaryDto> summaries = new ArrayList<>();
+
+        for (Order order : orders) {
+            for (OrderItem item : order.getItems()) {
+                var product = productRepository.findById(item.getProduct().getId())
+                        .orElseThrow(() -> new NoSuchElementException("Product not found: " + item.getProduct().getId()));
+                summaries.add(new OrderSummaryDto(order.getId(), product.getName(), item.getQuantity()));
+            }
+        }
+
+        return summaries;
     }
 }
