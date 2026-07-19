@@ -49,4 +49,9 @@ public class CartController {
     public Integer getItemQuantity(@PathVariable Long customerId, @PathVariable Long productId) {
         return cartService.getItemQuantity(customerId, productId);
     }
+
+    @GetMapping("/products/{productId}/stock")
+    public Integer getCachedStock(@PathVariable Long productId) {
+        return cartService.getCachedStock(productId);
+    }
 }

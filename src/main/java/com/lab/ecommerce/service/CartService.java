@@ -7,6 +7,8 @@ import com.lab.ecommerce.repository.CartRepository;
 import com.lab.ecommerce.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -15,6 +17,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
+    private final Map<Long, Product> productCache = new HashMap<>();
 
     public CartService(CartRepository cartRepository, ProductRepository productRepository) {
         this.cartRepository = cartRepository;
@@ -92,6 +95,15 @@ public class CartService {
                 .orElseThrow(() -> new NoSuchElementException("Cart not found for customer: " + customerId));
 
         return findItem(cart, productId).get().getQuantity();
+    }
+
+    public Integer getCachedStock(Long productId) {
+        Product product = productCache.get(productId);
+        if (product == null) {
+            productRepository.findById(productId).ifPresent(p -> productCache.put(productId, p));
+            product = productCache.get(productId);
+        }
+        return product.getStockQty();
     }
 
     private Optional<CartItem> findItem(Cart cart, Long productId) {
