@@ -35,7 +35,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order checkout(Long customerId, String idempotencyKey) {
+    public Order checkout(Long customerId, String idempotencyKey, Double loyaltyDiscountPercent) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             var existing = orderRepository.findByIdempotencyKey(idempotencyKey);
             if (existing.isPresent()) {
@@ -63,10 +63,19 @@ public class OrderService {
                 throw new IllegalStateException("Not enough stock for " + item.getProduct().getName());
             }
 
-            BigDecimal lineTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(cart.getItems().size()));
+            BigDecimal lineTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             total = total.add(lineTotal);
             order.getItems().add(new OrderItem(order, item.getProduct(), item.getQuantity(), item.getProduct().getPrice()));
-            item.getProduct().setStockQty(remaining);
+
+            entityManager.createQuery("UPDATE Product p SET p.stockQty = :remaining WHERE p.id = :id")
+                    .setParameter("remaining", remaining)
+                    .setParameter("id", item.getProduct().getId())
+                    .executeUpdate();
+        }
+
+        if (loyaltyDiscountPercent != null && loyaltyDiscountPercent > 0) {
+            double discountedTotal = total.doubleValue() * (1 - loyaltyDiscountPercent / 100.0);
+            total = BigDecimal.valueOf(discountedTotal);
         }
 
         order.setTotal(total);

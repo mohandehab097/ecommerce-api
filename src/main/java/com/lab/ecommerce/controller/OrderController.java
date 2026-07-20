@@ -20,8 +20,9 @@ public class OrderController {
 
     @PostMapping("/checkout")
     public Order checkout(@RequestParam Long customerId,
-                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
-        return orderService.checkout(customerId, idempotencyKey);
+                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+                          @RequestParam(required = false) Double loyaltyDiscountPercent) {
+        return orderService.checkout(customerId, idempotencyKey, loyaltyDiscountPercent);
     }
 
     @GetMapping("/{id}")
