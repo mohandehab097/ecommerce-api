@@ -35,16 +35,6 @@ findings table, no "review done" handoff), ask once:
 
 > "Want me to run code-review first, or ship as-is?"
 
-**Safety net:** if code-review *did* run in this conversation but its
-CodeRabbit question (Part 3) was never actually asked/answered — e.g. the
-user said "ship it" mid-fix and it got carried straight through — stop and
-ask it now, here, before doing anything else in this skill:
-
-> "Before I ship — want a `coderabbit review` second pass first?"
-
-Don't assume "ship it" already covered this; that phrase means "proceed once
-this is resolved," not "skip it."
-
 If the user says ship as-is, proceed — don't insist.
 
 ## Part 2 — One bundled confirmation

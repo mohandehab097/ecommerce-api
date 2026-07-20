@@ -1,5 +1,6 @@
 package com.lab.ecommerce.controller;
 
+import com.lab.ecommerce.dto.OrderSummaryDto;
 import com.lab.ecommerce.model.Order;
 import com.lab.ecommerce.service.OrderService;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +20,9 @@ public class OrderController {
 
     @PostMapping("/checkout")
     public Order checkout(@RequestParam Long customerId,
-                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
-        return orderService.checkout(customerId, idempotencyKey);
+                          @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+                          @RequestParam(required = false) Double loyaltyDiscountPercent) {
+        return orderService.checkout(customerId, idempotencyKey, loyaltyDiscountPercent);
     }
 
     @GetMapping("/{id}")
@@ -31,5 +33,15 @@ public class OrderController {
     @GetMapping
     public List<Order> getOrderHistory(@RequestParam Long customerId) {
         return orderService.getOrderHistory(customerId);
+    }
+
+    @GetMapping("/search")
+    public List<Order> searchOrdersByStatus(@RequestParam String status) {
+        return orderService.searchOrdersByStatus(status);
+    }
+
+    @GetMapping("/{customerId}/summaries")
+    public List<OrderSummaryDto> getOrderSummaries(@PathVariable Long customerId) {
+        return orderService.getOrderSummaries(customerId);
     }
 }
